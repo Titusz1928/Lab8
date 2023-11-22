@@ -51,13 +51,18 @@ public class MainApp {
                     rs.close();
                 }
                 case 2->{
-                    System.out.println("====Adaugare persoana======================");
+                    System.out.println("====Adaugarepersoana======================");
 
                     System.out.println("nume=");
-                    String nume=sc.next();
+                    String nume = sc.next();
                     System.out.println("varsta");
-                    int varsta=readAgeFromUser();
-                    AdaugarePersoana(connection,nume,varsta);
+                    try {
+                        int varsta = readAgeFromUser();
+                        AdaugarePersoana(connection, nume, varsta);
+                    } catch (ExceptieVarsta e) {
+                        System.out.println(e.getMessage());
+                        // handle the exception or exit the program
+                    }
                 }
                 case 3->{
                     System.out.println("====Adaugare excursie======================");
@@ -66,8 +71,8 @@ public class MainApp {
                     System.out.println("destinatia=");
                     String destinatia=sc.next();
                     System.out.println("anul=");
-                    int an=sc.nextInt();
-                    AdaugareExcursie(connection,id_pers,destinatia,an);
+                    int an = readAnExcursie(connection,id_pers);
+                    AdaugareExcursie(connection, id_pers, destinatia, an);
                 }
                 case 4->{
                     afisareExcursiiPentruPersoane(connection,statement);
@@ -108,49 +113,64 @@ public class MainApp {
         statement.close();
     }
 
-    /*private static boolean checkExcursionYearFromUser(Connection connection, Statement statement,int anExcursie, int idPers) throws ExceptieAnExcursie {
-        try {
-            String sql="SELECT varsta FROM persoane WHERE id_persoana=?";
-            try(PreparedStatement ps=connection.prepareStatement(sql)) {
-                ps.setInt(1, idPers);
-            }
-            catch (SQLException e) {
-                System.out.println(sql);
-                e.printStackTrace();
+    private static int readAnExcursie(Connection connection,int id_pers){
+        Scanner scanner = new Scanner(System.in);
+        int varsta=0;
+        while (true) {
+            try{
+                String sql="select varsta from persoane where id_persoana=?";
+                try(PreparedStatement ps=connection.prepareStatement(sql)) {
+                    ps.setInt(1, id_pers);
+                    try (ResultSet resultSet = ps.executeQuery()) {
+                        if (resultSet.next()) {
+                            varsta = resultSet.getInt("varsta");
+                            // Use 'intValue' as needed
+                        } else {
+                            System.out.println("No rows found.");
+                        }
+                    }
+                }
+                catch (SQLException e) {
+                    System.out.println(sql);
+                    e.printStackTrace();
+                }
+                System.out.print("Introduceți anul excursiei: ");
+                int an= scanner.nextInt();
+                if(an<(LocalDate.now().getYear()-varsta)){
+                    throw new ExceptieAnExcursie("Persoana nu a putut sa particepe la aceasta excursie");
+                }
+                return an;
+            }catch (InputMismatchException e) {
+                System.out.println("Introduceți un număr întreg valid pentru an.");
+                scanner.nextLine(); // Consume the invalid input
+            }catch (ExceptieAnExcursie e){
+                System.out.println(e.getMessage());
             }
 
-            if (anExcursie < anNastere || anExcursie > LocalDate.now().getYear()) {
-                throw new ExceptieAnExcursie("Anul excursiei introdus nu este valid.");
-            }
-            return true;
-        } catch (InputMismatchException e) {
-            throw new ExceptieAnExcursie("Introduceți un număr întreg valid pentru anul excursiei.");
         }
-    }*/
+    }
+
 
     private static int readAgeFromUser() throws ExceptieVarsta {
+        Scanner scanner = new Scanner(System.in);
+        while (true) {
             try {
                 System.out.print("Introduceți vârsta: ");
-                int varsta = readIntFromUser();
+                int varsta = scanner.nextInt();
                 if (varsta < 0 || varsta > 120) {
                     throw new ExceptieVarsta("Vârsta introdusă nu este validă.");
                 }
                 return varsta;
             } catch (InputMismatchException e) {
-                throw new ExceptieVarsta("Introduceți un număr întreg valid pentru vârstă.");
+                System.out.println("Introduceți un număr întreg valid pentru vârstă.");
+                scanner.nextLine(); // Consume the invalid input
+            } catch (ExceptieVarsta e) {
+                System.out.println(e.getMessage());
             }
+        }
     }
 
-    private static int readIntFromUser() {
-        int result = -1;
-        try {
-            Scanner scanner = new Scanner(System.in);
-            result = scanner.nextInt();
-        } catch (InputMismatchException e) {
-            System.out.println("Introduceți un număr întreg valid.");
-        }
-        return result;
-    }
+
 
 
     private static void stergerePersoana(Connection connection, Statement statement, int idPers) {
@@ -313,7 +333,9 @@ public class MainApp {
 
     private static Connection connectToDatabase() throws SQLException {
         String url = "jdbc:mysql://localhost:3306/lab8";
-        Connection connection = DriverManager.getConnection (url, "root", "root");
+        Scanner sc=new Scanner(System.in);
+        String password=sc.next();
+        Connection connection = DriverManager.getConnection (url, "root", password);
         return connection;
     }
 
