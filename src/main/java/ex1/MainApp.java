@@ -36,7 +36,7 @@ public class MainApp {
             System.out.println("6=cautare persoana care au vizitat o destinatie");
             System.out.println("7=persoane care au facut excursii intr-un anumit an");
             System.out.println("8=stergere excursie");
-            System.out.println("8=stergere persoana");
+            System.out.println("9=stergere persoana");
             opt=sc.nextInt();
             switch (opt){
                 case 0->{
@@ -333,6 +333,7 @@ public class MainApp {
 
     private static Connection connectToDatabase() throws SQLException {
         String url = "jdbc:mysql://localhost:3306/lab8";
+        System.out.println("parola: (pentru root)");
         Scanner sc=new Scanner(System.in);
         String password=sc.next();
         Connection connection = DriverManager.getConnection (url, "root", password);
